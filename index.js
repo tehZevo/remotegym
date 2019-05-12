@@ -1,1 +1,1 @@
-module.exports = require("./remotegym/server/EnvironmentServer.js");
+module.exports = require("./server/EnvironmentServer.js");
