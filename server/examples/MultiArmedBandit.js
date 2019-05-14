@@ -36,8 +36,3 @@ class MABEnvironment extends EnvironmentServer
 }
 
 module.exports = MABEnvironment;
-
-var args = process.argv.slice(2);
-var port = args[0] || 3000;
-var env = new MABEnvironment(3);
-env.listen(port);

@@ -119,8 +119,3 @@ class FloaterEnvironment extends EnvironmentServer
 }
 
 module.exports = FloaterEnvironment;
-
-var args = process.argv.slice(2);
-var port = args[0] || 3000;
-var env = new FloaterEnvironment();
-env.listen(port);

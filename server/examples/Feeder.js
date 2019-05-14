@@ -257,8 +257,3 @@ function randInt(low, ogHigh)
 
   return Math.floor(Math.random() * (high - low) + low)
 }
-
-var args = process.argv.slice(2);
-var port = args[0] || 3000;
-var env = new Feeder(8, 1, 1);
-env.listen(port);
