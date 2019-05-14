@@ -1,16 +1,16 @@
 var EnvironmentServer = require("remotegym");
 
-class FrozenLake extends EnvironmentServer
+class Feeder extends EnvironmentServer
 {
-  constructor(worldSize, numHoles, numGoals, randomizeStart=false, randomizeGoals=false, randomizeHoles=false)
+  //TODO: partial observability
+  constructor(worldSize=8, numGood=4, numBad=4)
   {
-    worldSize = worldSize || 4
-    numHoles = numHoles == null ? 1 : numHoles
-    numGoals = numGoals || 1
-
     super({
-      type: "discrete",
-      n: worldSize * worldSize
+      type: "box",
+      low: 0,
+      high: 1,
+      shape: [worldSize, worldSize, 3],
+      dtype: "float32",
     }, {
       type: "discrete",
       n: 4
@@ -20,20 +20,15 @@ class FrozenLake extends EnvironmentServer
     this.oobKill = false;
 
     this.size = worldSize;
-    this.numHoles = numHoles;
-    this.numGoals = numGoals;
+    this.numGood = numGood;
+    this.numBad = numBad;
 
     this.player = {x:-1, y:-1};
-    this.start = {x:-1, y:-1};
-    this.holes = [];
-    this.goals = [];
+    this.goods = []
+    this.bads = [];
 
     this.maxSteps = 200;
     this.curSteps = 0;
-
-    this.randomizeGoals = randomizeGoals;
-    this.randomizeHoles = randomizeHoles;
-    this.randomizeStart = randomizeStart;
 
     this.setup();
 
@@ -46,8 +41,8 @@ class FrozenLake extends EnvironmentServer
     this.placeStart();
     this.player = {x:this.start.x, y:this.start.y};
 
-    this.placeHoles();
-    this.placeGoals();
+    this.placeGoods();
+    this.placeBads();
   }
 
   placeStart()
@@ -55,23 +50,23 @@ class FrozenLake extends EnvironmentServer
     this.start = this.randomOpenPos();
   }
 
-  placeHoles()
+  placeBads()
   {
-    this.holes = [];
+    this.bads = [];
 
-    for(var i = 0; i < this.numHoles; i++)
+    while(this.bads.length < this.numBads)
     {
-      this.holes.push(this.randomOpenPos());
+      this.bads.push(this.randomOpenPos());
     }
   }
 
-  placeGoals()
+  placeGoods()
   {
-    this.goals = [];
+    this.goods = [];
 
-    for(var i = 0; i < this.numGoals; i++)
+    while(this.goods.length < this.numGoods)
     {
-      this.goals.push(this.randomOpenPos());
+      this.goods.push(this.randomOpenPos());
     }
   }
 
@@ -94,12 +89,12 @@ class FrozenLake extends EnvironmentServer
 
   isOpen(x, y)
   {
-    if(this.isHole(x, y))
+    if(this.isBad(x, y))
     {
       return false;
     }
 
-    if(this.isGoal(x, y))
+    if(this.isGood(x, y))
     {
       return false
     }
@@ -112,14 +107,26 @@ class FrozenLake extends EnvironmentServer
     return true;
   }
 
-  isGoal(x, y)
+  isGood(x, y)
   {
-    return this.goals.filter((e) => e.x == x && e.y == y).length > 0;
+    return this.goods.filter((e) => e.x == x && e.y == y).length > 0;
   }
 
-  isHole(x, y)
+  isBad(x, y)
   {
-    return this.holes.filter((e) => e.x == x && e.y == y).length > 0;
+    return this.bads.filter((e) => e.x == x && e.y == y).length > 0;
+  }
+
+  moveFood(x, y)
+  {
+    this.goods = this.goods.filter((e) => !(e.x == x && e.y == y))
+    this.placeGoods();
+  }
+
+  moveGarbage(x, y)
+  {
+    this.bads = this.bads.filter((e) => !(e.x == x && e.y == y))
+    this.placeBads();
   }
 
   step(action)
@@ -136,11 +143,12 @@ class FrozenLake extends EnvironmentServer
       case 3: p.x -= 1; break;
     }
 
-    if(this.isGoal(p.x, p.y))
+    if(this.isGood(p.x, p.y))
     {
       reward += 1;
-      done = true;
-      console.log(`touched goal at [${p.x}, ${p.y}]`);
+      //done = true;
+      console.log(`touched food at [${p.x}, ${p.y}]`);
+      this.moveFood(p.x, p.y);
     }
 
     if(!this.isInBounds(p.x, p.y))
@@ -155,11 +163,12 @@ class FrozenLake extends EnvironmentServer
       p = {x:this.player.x, y:this.player.y}; //prevent movement
     }
 
-    if(this.isHole(p.x, p.y))
+    if(this.isBad(p.x, p.y))
     {
       reward -= 1;
-      done = true;
+      //done = true;
       console.log(`fell into hole at [${p.x}, ${p.y}]`);
+      this.moveGarbage(p.x, p.y);
     }
 
     //write new player pos
@@ -194,11 +203,11 @@ class FrozenLake extends EnvironmentServer
     }
     if(this.randomizeHoles)
     {
-      this.placeHoles();
+      this.placeBads();
     }
     if(this.randomizeGoals)
     {
-      this.placeGoals();
+      this.placeGoods();
     }
 
     //move to start
@@ -234,7 +243,7 @@ class FrozenLake extends EnvironmentServer
     var GROUND = ".";
 
     return this.player.x == x && this.player.y == y ? PLAYER :
-      this.isHole(x, y) ? HOLE : this.isGoal(x, y) ? GOAL :
+      this.isBad(x, y) ? HOLE : this.isGood(x, y) ? GOAL :
       this.start.x == x && this.start.y == y ? START : GROUND;
   }
 }
