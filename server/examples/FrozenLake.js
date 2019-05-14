@@ -1,4 +1,4 @@
-var EnvironmentServer = require("remotegym");
+var EnvironmentServer = require("../EnvironmentServer.js");
 
 class FrozenLake extends EnvironmentServer
 {
