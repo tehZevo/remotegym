@@ -248,7 +248,7 @@ class Feeder extends EnvironmentServer
   }
 }
 
-module.exports = FrozenLake
+module.exports = Feeder
 
 function randInt(low, ogHigh)
 {
@@ -260,5 +260,5 @@ function randInt(low, ogHigh)
 
 var args = process.argv.slice(2);
 var port = args[0] || 3000;
-var env = new FrozenLake(8, 1, 1);
+var env = new Feeder(8, 1, 1);
 env.listen(port);
