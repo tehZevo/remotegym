@@ -1,3 +1,3 @@
 module.exports = Object.assign({
   Server: require("./server/EnvironmentServer.js"),
-}, require("./examples"));
+}, require("./server/examples"));
